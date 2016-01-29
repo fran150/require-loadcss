@@ -40,9 +40,9 @@ define(function () {
                 link = createLink(name),
                     head.appendChild(link);
 
-                interval = win.setInterval(function () {
+                interval = window.setInterval(function () {
                     if (test.offsetHeight > 0) {
-                        clearInterval(interval);
+                        window.clearInterval(interval);
                         docBody.removeChild(test);
                         load(link);
                     }
