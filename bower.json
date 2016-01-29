@@ -1,6 +1,6 @@
 {
   "name": "require-loadcss",
-  "version": "0.1.2",
+  "version": "0.1.1",
   "ignore": [".gitignore"],
   "main": ["css.js"]
 }
