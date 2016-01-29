@@ -9,45 +9,19 @@ define(function () {
 
     return {
         load: function (name, req, load) {
-            var doc = window.document,
-                docBody = doc.body,
-                createLink = function (src) {
-                    var link = doc.createElement('link');
-                    link.type = 'text/css';
-                    link.rel = 'stylesheet';
-                    link.href = src;
-                    return link;
-                },
-                resolveClassName = function (moduleName) {
-                    var parts = moduleName.split('/');
-                    return parts[parts.length - 1].replace('.', '-') + '-loaded';
-                };
+            var head = document.getElementsByTagName('head')[0];
 
-            var head = doc.getElementsByTagName('head')[0],
-                test,
-                interval,
-                link;
+            if (!document.querySelector('[data-css-loaded=' + name + ']')) {
+                var link = document.createElement('link');
+                link.type = 'text/css';
+                link.rel = 'stylesheet';
+                link.setAttribute('data-css-loaded', name);
+                link.href = requirejs.toUrl(name) + '.css';
 
-            test = doc.createElement('div');
-            test.className = resolveClassName(name);
-            test.style.cssText = 'position: absolute;left:-9999px;top:-9999px;';
-            docBody.appendChild(test);
-
-            if (test.offsetHeight > 0) {
-                docBody.removeChild(test);
-                load();
-            } else {
-                link = createLink(name),
-                    head.appendChild(link);
-
-                interval = window.setInterval(function () {
-                    if (test.offsetHeight > 0) {
-                        window.clearInterval(interval);
-                        docBody.removeChild(test);
-                        load(link);
-                    }
-                }, 50);
-            }
+                head.appendChild(link);
+            } 
+			
+			load(true);
         },
         normalize: function (name, normalize) {
             if (name.substr(name.length - 4, 4) == '.css')
