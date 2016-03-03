@@ -2,8 +2,6 @@ define(function () {
 
     'use strict';
 
-    var checkIfLoaded;
-
     if (typeof window === 'undefined') {
         return {
             load: function (n, r, load) {
@@ -12,49 +10,54 @@ define(function () {
         };
     }
 
-    checkIfLoaded = function (link, fn) {
-        var sheet, cssRules, intervalId, timeoutId;
+    function checkIfLoaded(link, fn) {
+        var engine = window.navigator.userAgent.match(/Trident\/([^ ;]*)|AppleWebKit\/([^ ;]*)|Opera\/([^ ;]*)|rv\:([^ ;]*)(.*?)Gecko\/([^ ;]*)|MSIE\s([^ ;]*)|AndroidWebKit\/([^ ;]*)/) || 0,
+            loadInterval,
+            useOnload,
+            key;
 
-        if ('sheet' in link) {
-            sheet = 'sheet';
-            cssRules = 'cssRules';
-        } else {
-            sheet = 'styleSheet';
-            cssRules = 'rules';
+        if (engine[2] || engine[8]) {
+            useOnload = false;
         }
 
-        intervalId = window.setInterval(function () {
-            try {
-                if (link[sheet] && link[sheet][cssRules].length) {
-                    window.clearInterval(intervalId);
-                    window.clearTimeout(timeoutId);
-                    fn(true);
+        if (useOnload) {
+            link.onload = function () {
+                link.onload = function () {
+                };
+                setTimeout(fn, 7);
+            }
+        } else {
+            loadInterval = setInterval(function () {
+                for (key in document.styleSheets) {
+                    // skip loop if the property is from prototype
+                    if (document.styleSheets.hasOwnProperty(key)) {
+                        if (document.styleSheets[key].href === link.href) {
+                            clearInterval(loadInterval);
+                            fn();
+                        }
+                    }
                 }
-            } catch (e) {}
-        }, 10);
-
-        timeoutId = window.setTimeout(function () {
-            window.clearInterval(intervalId);
-            window.clearTimeout(timeoutId);
-            fn(false);
-        }, 15000);
-
-    };
+            }, 10);
+        }
+    }
 
     return {
         load: function (name, req, load) {
             var head = document.getElementsByTagName('head')[0],
+                dataSelector = name.replace(/\/|:|\./g, '-'),
                 link;
 
-            if (!document.querySelector('[data-css-loaded=' + name + ']')) {
+            if (!document.querySelector('[data-css-loaded=' + dataSelector + ']')) {
                 link = document.createElement('link');
 
-                link.setAttribute('href', requirejs.toUrl(name) + '.css');
+                link.setAttribute('href', req.toUrl(name) + '.css');
                 link.setAttribute('rel', 'stylesheet');
                 link.setAttribute('type', 'text/css');
-                link.setAttribute('data-css-loaded', name);
 
-                checkIfLoaded(link, load);
+                checkIfLoaded(link, function () {
+                    link.setAttribute('data-css-loaded', dataSelector);
+                    load();
+                });
 
                 head.appendChild(link);
             }
