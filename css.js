@@ -29,7 +29,6 @@ define(function () {
         } else {
             loadInterval = setInterval(function () {
                 for (key in document.styleSheets) {
-                    // skip loop if the property is from prototype
                     if (document.styleSheets.hasOwnProperty(key)) {
                         if (document.styleSheets[key].href === link.href) {
                             clearInterval(loadInterval);
