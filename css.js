@@ -43,8 +43,10 @@ define(function () {
     return {
         load: function (name, req, load) {
             var head = document.getElementsByTagName('head')[0],
-                dataSelector = name.replace(/\/|_|:|\./g, '-'),
+                dataSelector = name.replace(/\/|:|\./g, '-'),
                 link;
+
+            dataSelector = dataSelector.replace(/(\-+)/g, '-');
 
             if (!document.querySelector('[data-css-loaded=' + dataSelector + ']')) {
                 link = document.createElement('link');
