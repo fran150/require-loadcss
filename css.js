@@ -116,8 +116,11 @@ define(['text'], function (text) {
                                     for (var k = 0; k < matches.length; k++) {
                                         var url = matches[k];
 
-                                        var from = url.indexOf("'");
-                                        var to = url.lastIndexOf("'");
+                                        url = url.replace("\'", "");
+                                        url = url.replace("\"", "");
+
+                                        var from = url.indexOf("(");
+                                        var to = url.lastIndexOf(")");
 
                                         url = url.substring(from + 1, to);
 
@@ -129,8 +132,6 @@ define(['text'], function (text) {
 
                                         var fontSource = path.resolve(dirSource, url);
                                         var fontTarget = path.resolve(dirTarget, url);
-
-                                        console.log(fontSource, '->', fontTarget);
 
                                         fs.copySync(fontSource, fontTarget);
                                     }
