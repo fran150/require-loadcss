@@ -15,9 +15,10 @@
   ],
   "homepage": "https://github.com/fran150/require-loadcss",
   "authors": [
+    "tkleist",
     "fran150 <panchi150@gmail.com>"
   ],
-  "description": "require-loadcss implementation for Quark. Loads CSS with requirejs.",
+  "description": "Require-loadcss implementation for Quark. Loads CSS with requirejs.",
   "keywords": [
     "quark",
     "require",
