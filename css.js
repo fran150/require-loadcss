@@ -97,6 +97,8 @@ define(['text'], function (text) {
                 var fs = require.nodeRequire('fs-extra');
                 var css = require.nodeRequire('css');
 
+                fs.copySync(source, target);
+
                 text.get(source, function(data) {
                     var dirSource = path.dirname(source);
                     var dirTarget = path.dirname(target);
@@ -139,8 +141,6 @@ define(['text'], function (text) {
                             }
                         }
                     }
-
-                    fs.copySync(source, target);
                 });
             }
         }
