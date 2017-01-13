@@ -60,8 +60,12 @@ define(['text'], function (text) {
                     onLoad();
                 } else {
 
+                    var parsed = text.parseName(name),
+                        nonStripName = parsed.moduleName + (parsed.ext ? '.' + parsed.ext : ''),
+                        url = req.toUrl(nonStripName);
+
                     var head = document.getElementsByTagName('head')[0],
-                        dataSelector = name.replace(/\/|:|\./g, '-'),
+                        dataSelector = nonStripName.replace(/\/|:|\./g, '-'),
                         link;
 
                     dataSelector = dataSelector.replace(/(\-+)/g, '-');
@@ -69,7 +73,7 @@ define(['text'], function (text) {
                     if (!document.querySelector('[data-css-loaded=' + dataSelector + ']')) {
                         link = document.createElement('link');
 
-                        link.setAttribute('href', req.toUrl(name) + '.css');
+                        link.setAttribute('href', url + '.css');
                         link.setAttribute('rel', 'stylesheet');
                         link.setAttribute('type', 'text/css');
 
