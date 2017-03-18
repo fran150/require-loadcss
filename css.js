@@ -69,6 +69,7 @@ define(['text'], function (text) {
                         link;
 
                     dataSelector = dataSelector.replace(/(\-+)/g, '-');
+                    dataSelector = dataSelector.replace('$', '');
 
                     if (!document.querySelector('[data-css-loaded=' + dataSelector + ']')) {
                         link = document.createElement('link');
