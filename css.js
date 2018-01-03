@@ -96,14 +96,15 @@ define(['text'], function (text) {
         write: function(pluginName, moduleName, write) {
             if (moduleName in buildMap) {
                 var source = path.resolve(dirBaseUrl, buildMap[moduleName]);
-                var target = path.resolve(cssOutDir, buildMap[moduleName]);
+                var target = path.resolve(cssOutDir, "css.css");
 
                 var fs = require.nodeRequire('fs-extra');
                 var css = require.nodeRequire('css');
 
-                fs.copySync(source, target);
-
                 text.get(source, function(data) {
+                    fs.appendFileSync(target, data);
+                    
+
                     var dirSource = path.dirname(source);
                     var dirTarget = path.dirname(target);
 
