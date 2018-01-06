@@ -1,10 +1,12 @@
 define(['text'], function (text) {
-
+    
     'use strict';
 
     var cssOutDir;
     var dirBaseUrl;
     var buildMap = {};
+    var cssConfig;
+    var cssLocation = {};
 
     function checkIfLoaded(link, fn) {
         var engine = window.navigator.userAgent.match(/Trident\/([^ ;]*)|AppleWebKit\/([^ ;]*)|Opera\/([^ ;]*)|rv\:([^ ;]*)(.*?)Gecko\/([^ ;]*)|MSIE\s([^ ;]*)|AndroidWebKit\/([^ ;]*)/) || 0,
@@ -44,6 +46,8 @@ define(['text'], function (text) {
                 onLoad(null);
             } else {
                 if (config.isBuild) {
+                    cssConfig = config.css;
+
                     if (config.cssOutDir) {
                         cssOutDir = config.cssOutDir;
                     } else {
@@ -60,9 +64,18 @@ define(['text'], function (text) {
                     onLoad();
                 } else {
 
+                    debugger;
+
                     var parsed = text.parseName(name),
-                        nonStripName = parsed.moduleName + (parsed.ext ? '.' + parsed.ext : ''),
-                        url = req.toUrl(nonStripName);
+                        nonStripName = parsed.moduleName + (parsed.ext ? '.' + parsed.ext : '')
+                    
+                    var url = req.toUrl("css.css");
+                                        
+                    if (config.cssConfig) {
+                        if (config.cssConfig[name]) {
+                            url = req.toUrl(config.cssConfig[name]);
+                        }
+                    }
 
                     var head = document.getElementsByTagName('head')[0],
                         dataSelector = nonStripName.replace(/\/|:|\./g, '-'),
@@ -73,7 +86,7 @@ define(['text'], function (text) {
                     if (!document.querySelector('[data-css-loaded=' + dataSelector + ']')) {
                         link = document.createElement('link');
 
-                        link.setAttribute('href', url + '.css');
+                        link.setAttribute('href', url);
                         link.setAttribute('rel', 'stylesheet');
                         link.setAttribute('type', 'text/css');
 
@@ -96,14 +109,36 @@ define(['text'], function (text) {
         write: function(pluginName, moduleName, write) {
             if (moduleName in buildMap) {
                 var source = path.resolve(dirBaseUrl, buildMap[moduleName]);
-                var target = path.resolve(cssOutDir, "css.css");
+
+                var found = "";
+                var file = "css.css";
+
+                if (cssConfig.bundles) {
+                    for (var bundleName in cssConfig.bundles) {
+                        var bundle = cssConfig.bundles[bundleName];
+                        
+                        for (var i = 0; i < bundle.length; i++) {
+                            if (moduleName == bundle[i]) {
+                                found = moduleName;
+                                file = bundleName + ".css";
+                                cssLocation[moduleName] = file;
+                            }
+                        }
+                    }
+                }
+
+                var target = path.resolve(cssOutDir, file);
 
                 var fs = require.nodeRequire('fs-extra');
                 var css = require.nodeRequire('css');
+                var util = require.nodeRequire('util');
 
+
+                var cssConfTarget = path.resolve(cssOutDir, "css.js");
+                fs.writeFileSync(cssConfTarget, "require.config({ cssConfig: " +  util.inspect(cssLocation) + "})", 'utf-8');
+                
                 text.get(source, function(data) {
                     fs.appendFileSync(target, data);
-                    
 
                     var dirSource = path.dirname(source);
                     var dirTarget = path.dirname(target);
