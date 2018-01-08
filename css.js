@@ -5,6 +5,7 @@ define(['text'], function (text) {
     var cssOutDir;
     var dirBaseUrl;
     var buildMap = {};
+    var bundlesMap = {};
     var cssConfig;
     var cssLocation = {};
 
@@ -38,43 +39,96 @@ define(['text'], function (text) {
         }
     }
 
+    function findBundle(req, config, source) {
+        // If there's a css config for bundling
+        if (config && config.bundles) {
+            // Iterate over each bundle name
+            for (var bundleName in config.bundles) {
+                // Get the bundle files
+                var bundle = config.bundles[bundleName];
+
+                // Iterate over each file in the bundle
+                for (var i = 0; i < bundle.length; i++) {
+                    // Generate the target url 
+                    var target = req.toUrl(bundle[i]);
+                    target = target.replace(config.dirBaseUrl, '') + '.css';
+
+                    // If the target file matches the source file return the bundle name
+                    if (source == target) {
+                        return bundleName;
+                    }
+                }
+            }
+        }
+
+        return "default";
+    }
+
+    function getBundleFileName(bundleName, cssConfig, cssOutDir) {
+        if (cssConfig && cssConfig.bundles) {
+            return path.resolve(cssOutDir, bundleName + ".css");
+        }
+
+        return "";
+    }
+
     return {
         load: function (name, req, onLoad, config) {
             if (config.isBuild && ((req.toUrl(name).indexOf('empty:') === 0) || (req.toUrl(name).indexOf('http:') === 0) || (req.toUrl(name).indexOf('https:') === 0))) {
-                //avoid inlining cache busted JSON or if inlineJSON:false
-                //and don't inline files marked as empty!
+                // Avoid inlining cache busted JSON or if inlineJSON:false
+                // and don't inline files marked as empty!
                 onLoad(null);
             } else {
                 if (config.isBuild) {
                     cssConfig = config.css;
 
+                    // Get the cssOutDir
                     if (config.cssOutDir) {
                         cssOutDir = config.cssOutDir;
                     } else {
                         throw new Error('Must specify \'cssOutDir\' config parameter');
                     }
 
+                    // Get the dir base url
                     dirBaseUrl = config.dirBaseUrl;
 
-                    var file = req.toUrl(name);
-                    file = file.replace(config.dirBaseUrl, '') + '.css';
+                    // Get the file source
+                    var source = req.toUrl(name) + ".css";
+                    
+                    // Get the corresponding bundle if any
+                    var bundle = findBundle(req, cssConfig, source);
 
-                    buildMap[name] = file;
+                    buildMap[name] = {
+                        file: source,
+                        bundle: bundle
+                    }
+
+                    bundlesMap[name] = bundle;
 
                     onLoad();
                 } else {
+                    var parsed;
+                    var url;
+                    var nonStripName;
 
                     debugger;
 
-                    var parsed = text.parseName(name),
-                        nonStripName = parsed.moduleName + (parsed.ext ? '.' + parsed.ext : '')
-                    
-                    var url = req.toUrl("css.css");
-                                        
+                    // If theres a cssConfig entry on require (added by compiler)
                     if (config.cssConfig) {
+                        // And theres a bundle config for the current module
                         if (config.cssConfig[name]) {
-                            url = req.toUrl(config.cssConfig[name]);
+                            var bundle = config.cssConfig[name];
+                            var parsed = text.parseName(bundle);
+                            nonStripName = parsed.moduleName + (parsed.ext ? '.' + parsed.ext : '');
+                            url = req.toUrl(nonStripName) + ".css";                            
                         }
+                    }
+
+                    // If url is not found on bundles get it from the module itself
+                    if (!url) {
+                        var parsed = text.parseName(name);                        
+                        nonStripName = parsed.moduleName + (parsed.ext ? '.' + parsed.ext : '');
+                        url = req.toUrl(nonStripName) + ".css";
                     }
 
                     var head = document.getElementsByTagName('head')[0],
@@ -106,36 +160,22 @@ define(['text'], function (text) {
             }
             return normalize(name);
         },
+        onLayerEnd: function (write, data) {
+            var util = require.nodeRequire('util');
+
+            write("require.config({ cssConfig: " +  util.inspect(bundlesMap) + " })");
+        },
         write: function(pluginName, moduleName, write) {
+            // If the module name is in the buildmap
             if (moduleName in buildMap) {
-                var source = path.resolve(dirBaseUrl, buildMap[moduleName]);
+                var source = buildMap[moduleName].file;
 
-                var found = "";
-                var file = "css.css";
-
-                if (cssConfig.bundles) {
-                    for (var bundleName in cssConfig.bundles) {
-                        var bundle = cssConfig.bundles[bundleName];
-                        
-                        for (var i = 0; i < bundle.length; i++) {
-                            if (moduleName == bundle[i]) {
-                                found = moduleName;
-                                file = bundleName + ".css";
-                                cssLocation[moduleName] = file;
-                            }
-                        }
-                    }
+                if (buildMap[moduleName].bundle) {
+                    target = getBundleFileName(buildMap[moduleName].bundle, cssConfig, cssOutDir);
                 }
-
-                var target = path.resolve(cssOutDir, file);
 
                 var fs = require.nodeRequire('fs-extra');
                 var css = require.nodeRequire('css');
-                var util = require.nodeRequire('util');
-
-
-                var cssConfTarget = path.resolve(cssOutDir, "css.js");
-                fs.writeFileSync(cssConfTarget, "require.config({ cssConfig: " +  util.inspect(cssLocation) + "})", 'utf-8');
                 
                 text.get(source, function(data) {
                     fs.appendFileSync(target, data);
