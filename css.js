@@ -172,7 +172,7 @@ define(['text'], function (text) {
                         head.appendChild(link);                        
                         
                         if (config.cssConfig && config.cssConfig.waitFileLoad) {
-.                           checkIfLoaded(link, function () {
+                            checkIfLoaded(link, function () {
                                 link.setAttribute('data-css-loaded', dataSelector);
                                 onLoad();
                             });                            
