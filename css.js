@@ -95,7 +95,7 @@ define(['text'], function (text) {
 
                     if (!isExcluded(name, cssConfig)) {
                         if (config.css) {
-                            uglify = config.css.uglify;
+                            uglify = config.uglify;
                         }
 
                         // Get the cssOutDir
